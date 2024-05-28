@@ -53,7 +53,7 @@ runs:
         RESPONSE=$(curl -X POST -s -o response.txt -w "%{response_code}" https://${{ inputs.hostname }}/api/v2/workspaces/${{ inputs.workspace_id }}/vars -H 'Content-Type: application/vnd.api+json' -H "Authorization: Bearer ${{ inputs.token }}" -d '{"type": "vars","data": {"attributes": {"key": "${{ inputs.name }}","value": "${{ inputs.scruitinizer }}","category": "${{ inputs.category }}","sensitive": "${{ inputs.sensitive }}","hcl": "${{ inputs.hcl }}"}}}' 2>&1)
         STATUS=$(cat response.txt | jq '.errors[].status' -r)
         if [ $STATUS == "422" ]; then
-          RESPONSE=$(curl -X PATCH -s -o response.txt -w "%{response_code}" https://${{ inputs.hostname }}/api/v2/workspaces/${{ inputs.workspace_id }}/vars -H "Authorization: Bearer ${{ inputs.TF_API_TOKEN }}" | jq '.data[] | select(.attributes.key == "${{ inputs.name }}") | .id' -r) -H 'Content-Type: application/vnd.api+json' -H "Authorization: Bearer ${{ inputs.token }}" -d '{"type": "vars","data": {"attributes": {"key": "${{ inputs.name }}","value": "${{ inputs.scruitinizer }}","category": "${{ inputs.category }}","sensitive": "${{ inputs.sensitive }}","hcl": "${{ inputs.hcl }}"}}}' 2>&1)
+          RESPONSE=$(curl -X PATCH -s -o response.txt -w "%{response_code}" https://${{ inputs.hostname }}/api/v2/workspaces/${{ inputs.workspace_id }}/vars -H 'Content-Type: application/vnd.api+json' -H "Authorization: Bearer ${{ inputs.token }}" -d '{"type": "vars","data": {"attributes": {"key": "${{ inputs.name }}","value": "${{ inputs.scruitinizer }}","category": "${{ inputs.category }}","sensitive": "${{ inputs.sensitive }}","hcl": "${{ inputs.hcl }}"}}}' 2>&1)
         fi
         rm response.txt
 ...
