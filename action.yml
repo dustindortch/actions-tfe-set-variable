@@ -42,7 +42,7 @@
   outputs:
     status:
       description: "The result of the operation. Possible values are `Success`, `Error` or `Timeout`"
-      value: ${{ steps.get-workspace-id.outputs.status }}
+      value: ${{ steps.set-workspace-variable.outputs.status }}
   
   runs:
     using: composite
