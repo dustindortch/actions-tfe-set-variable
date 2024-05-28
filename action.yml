@@ -1,0 +1,59 @@
+---
+  author: Dustin Dortch
+  name: Set TFC/TFE variable
+  description: Create or update a TFC/TFE workspace variable.
+  
+  inputs:
+    # global flags
+    hostname:
+      default: "app.terraform.io"
+      description: "The hostname of a Terraform Enterprise installation, if using Terraform Enterprise. Defaults to HCP Terraform (app.terraform.io) if `TF_HOSTNAME` environment variable is not set."
+      required: false
+    token:
+      default: ""
+      description: "The token used to authenticate with HCP Terraform. Defaults to reading `TF_API_TOKEN` environment variable."
+      required: false
+    organization:
+      default: ""
+      description: "The name of the organization in HCP Terraform. Defaults to reading `TF_CLOUD_ORGANIZATION` environment variable."
+      required: false
+    category:
+      default: "terraform"
+      description: "Whether this is a Terraform or environment variable. Valid values are \"terraform\" or \"env\"."
+    hcl:
+      default: "false"
+      description: "Whether to evaluate the value of the variable as a string of HCL code. Has no effect for environment variables."
+    sensitive:
+      default: "false"
+      description: "Whether the value is sensitive. If true then the variable is written once and not visible thereafter."
+    value:
+      default: ""
+      description: "The value of the workspace variable."
+      required: false
+    ## required
+    workspace_id:
+      description: "The ID of the workspace of the variable."
+      required: true
+    name:
+      description: "The name of the workspace variable."
+      required: true
+    
+  
+  outputs:
+    status:
+      description: "The result of the operation. Possible values are `Success`, `Error` or `Timeout`"
+      value: ${{ steps.get-workspace-id.outputs.status }}
+  
+  runs:
+    using: composite
+    steps:
+      - id: set-workspace-variable
+        name: Set workspace variable
+        run: |
+          RESPONSE=$(curl -X POST -s -o response.txt -w "%{response_code}" https://${{ inputs.hostname }}/api/v2/workspaces/${{ inputs.workspace_id }}/vars -H 'Content-Type: application/vnd.api+json' -H "Authorization: Bearer ${{ inputs.token }}" -d '{"type": "vars","data": {"attributes": {"key": "${{ inputs.name }}","value": "${{ inputs.value }}","category": "${{ inputs.category }}","sensitive": "${{ inputs.sensitive }}","hcl": "${{ inputs.hcl }}"}}}' 2>&1)
+          STATUS=$(cat response.txt | jq '.errors[].status' -r)
+          if [ $STATUS == "422" ]; then
+            RESPONSE=$(curl -X PATCH -s -o response.txt -w "%{response_code}" https://${{ inputs.hostname }}/api/v2/workspaces/${{ steps.get-workspace-id.outputs.workspace_id }}/vars/$(curl -s https://app.terraform.io/api/v2/workspaces/${{ steps.get-workspace-id.outputs.workspace_id }}/vars -H "Authorization: Bearer ${{ secrets.TF_API_TOKEN }}" | jq '.data[] | select(.attributes.key == "${{ inputs.name }}") | .id' -r) -H 'Content-Type: application/vnd.api+json' -H "Authorization: Bearer ${{ inputs.token }}" -d '{"type": "vars","data": {"attributes": {"key": "${{ inputs.name }}","value": "${{ inputs.value }}","category": "${{ inputs.category }}","sensitive": "${{ inputs.sensitive }}","hcl": "${{ inputs.hcl }}"}}}' 2>&1)
+          fi
+          rm response.txt
+  ...
